@@ -1,0 +1,22 @@
+# Base et Data Science
+pandas
+numpy
+openpyxl
+matplotlib
+plotly
+scikit-learn
+
+# Traitement du Langage Naturel (NLP)
+transformers
+sentencepiece
+sentence-transformers
+gensim
+symspellpy
+
+# Deep Learning et Interprétabilité
+torch
+shap
+
+# Application et IA Générative
+streamlit
+google-generativeai

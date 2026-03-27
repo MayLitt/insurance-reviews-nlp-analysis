@@ -1,0 +1,27 @@
+# 🔐 Secrets
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environnements
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+.cache/
+
+# Fichiers temporaires
+*.tmp
