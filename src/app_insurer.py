@@ -15,12 +15,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- CHARGEMENT DES DONNEES ---
+# --- LOAD DATA ---
 @st.cache_data
 def load_data():
     df = pd.read_csv(
         "./data/avis_avec_themes.csv",
-        on_bad_lines='skip'  # Sans quoting=3
+        on_bad_lines='skip'
     )
     df = df.dropna(subset=['note', 'avis_nllb_en']).reset_index(drop=True)
     df['note'] = pd.to_numeric(df['note'], errors='coerce')
@@ -40,14 +40,14 @@ def load_embeddings_and_model():
     embeddings = np.load("./data/avis_embeddings.npy")
     return model, embeddings
 
-def generate_rag_answer(question, context_text): # <-- On change 'results' par 'context_text'
+# --- GENERATE RAG ANSWER ---
+def generate_rag_answer(question, context_text):
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
     except KeyError:
-        return "⚠️ Erreur : Clé API Gemini introuvable."
+        return "⚠️ Error: Gemini API key not found."
 
-    # Le Prompt "Full English" (On utilise directement context_text)
     prompt = f"""
     You are an expert data analyst in the insurance sector. 
     Your task is to answer the user's question accurately, USING ONLY the context provided below.
@@ -70,10 +70,10 @@ def generate_rag_answer(question, context_text): # <-- On change 'results' par '
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f" Erreur lors de l'appel à l'API : {e}"
+        return f"Error during API call: {e}"
     
 
-# --- RECHERCHE SEMANTIQUE ---
+# --- SEMANTIC SEARCH ---
 def semantic_search(query, model, embeddings, df, top_k=10):
     query_vec = model.encode([query])[0]
     scores = []
@@ -94,13 +94,13 @@ def semantic_search(query, model, embeddings, df, top_k=10):
         })
     return results
 
-# --- RESUME PAR ASSUREUR ---
+# --- INSURER SUMMARY ---
 def generate_summary(df_insurer, insurer_name):
     total = len(df_insurer)
     avg_note = df_insurer['note'].mean()
     sentiment_counts = df_insurer['sentiment'].value_counts()
     
-    # Protection si theme absent ou vide
+    # Handle missing or empty theme column
     if 'theme' in df_insurer.columns and len(df_insurer['theme'].dropna()) > 0:
         theme_counts = df_insurer['theme'].value_counts()
         top_theme = theme_counts.index[0]
@@ -164,7 +164,7 @@ if page == "Overview":
 
     st.markdown("---")
 
-    # Top 10 assureurs par note moyenne
+    # Top 10 insurers by average rating
     st.subheader("Top 10 Insurers by Average Rating")
     top_insurers = (
         df.groupby('assureur')
@@ -190,7 +190,7 @@ if page == "Overview":
 
     st.markdown("---")
 
-    # Distribution des sentiments globale
+    # Global sentiment distribution
     col1, col2 = st.columns(2)
 
     with col1:
@@ -226,7 +226,7 @@ if page == "Overview":
 
     st.markdown("---")
 
-    # Tableau complet
+    # Full summary table
     st.subheader("All Insurers — Summary Table")
     summary_table = (
         df.groupby('assureur')

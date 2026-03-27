@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CHARGEMENT DES MODELES ET DONNEES
+# LOAD MODELS AND DATA
 # ============================================================
 
 @st.cache_resource
@@ -39,10 +39,13 @@ def load_data():
     df = df.dropna(subset=['note', 'avis_nllb_en']).reset_index(drop=True)
     df['note'] = pd.to_numeric(df['note'], errors='coerce')
     df = df.dropna(subset=['note'])
+
+    # Convert rating to sentiment label
     def note_to_sentiment(note):
         if note <= 2: return 'negative'
         elif note == 3: return 'neutral'
         else: return 'positive'
+
     df['sentiment'] = df['note'].apply(note_to_sentiment)
     return df
 
@@ -53,7 +56,7 @@ def load_embeddings_and_model():
     return model, embeddings
 
 # ============================================================
-# FONCTIONS UTILITAIRES
+# UTILITY FUNCTIONS
 # ============================================================
 
 def predict(text, tokenizer, model, label_mapping):
@@ -70,11 +73,16 @@ def predict(text, tokenizer, model, label_mapping):
 
 def semantic_search(query, model, embeddings, df, top_k=10):
     query_vec = model.encode([query])[0]
+
+    # Compute cosine similarity with all embeddings
     scores = []
     for i, emb in enumerate(embeddings[:len(df)]):
         score = np.dot(query_vec, emb) / (norm(query_vec) * norm(emb))
         scores.append((i, score))
+
+    # Sort results by similarity score
     scores.sort(key=lambda x: x[1], reverse=True)
+
     results = []
     for idx, score in scores[:top_k]:
         row = df.iloc[idx]
@@ -92,15 +100,20 @@ def generate_summary(df_insurer, insurer_name):
     total = len(df_insurer)
     avg_note = df_insurer['note'].mean()
     sentiment_counts = df_insurer['sentiment'].value_counts()
+
+    # Extract most frequent theme if available
     if 'theme' in df_insurer.columns and len(df_insurer['theme'].dropna()) > 0:
         theme_counts = df_insurer['theme'].value_counts()
         top_theme = theme_counts.index[0]
     else:
         top_theme = "unknown"
+
     pos_pct = sentiment_counts.get('positive', 0) / total * 100
     neg_pct = sentiment_counts.get('negative', 0) / total * 100
     neu_pct = sentiment_counts.get('neutral', 0) / total * 100
+
     overall = "very well rated" if avg_note >= 4 else ("moderately rated" if avg_note >= 3 else "poorly rated")
+
     return f"""
     **{insurer_name}** is {overall} with an average rating of **{avg_note:.1f}/5** 
     based on **{total} reviews**.
@@ -116,6 +129,8 @@ def generate_rag_answer(question, context_text):
         genai.configure(api_key=api_key)
     except KeyError:
         return "Gemini API key not found in secrets."
+
+    # Prompt for RAG-based QA
     prompt = f"""You are an expert insurance analyst. Answer the question accurately using ONLY the context below.
 RULES:
 1. Quote exact insurer names from the context (inside brackets like [Insurer Name]).
@@ -126,6 +141,7 @@ CONTEXT:
 {context_text}
 
 QUESTION: {question}"""
+
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(prompt)
@@ -136,12 +152,14 @@ QUESTION: {question}"""
 def make_bar_chart(probs_dict, title, color):
     labels = list(probs_dict.keys())
     values = list(probs_dict.values())
+
     fig = go.Figure(go.Bar(
         x=values, y=labels, orientation='h',
         marker_color=color,
         text=[f"{v:.0%}" for v in values],
         textposition='outside'
     ))
+
     fig.update_layout(
         title=title,
         xaxis=dict(range=[0, 1], tickformat='.0%'),
@@ -151,7 +169,7 @@ def make_bar_chart(probs_dict, title, color):
     return fig
 
 # ============================================================
-# NAVIGATION PRINCIPALE
+# MAIN NAVIGATION
 # ============================================================
 
 df = load_data()
@@ -160,11 +178,14 @@ insurers = sorted(df['assureur'].unique().tolist())
 with st.sidebar:
     st.title("Insurance Review Platform")
     st.markdown("---")
+
     main_page = st.radio(
         "Select a tool:",
         ["Review Prediction", "Insurer Analysis"]
     )
+
     st.markdown("---")
+
     st.markdown("""
     **Models (Macro F1):**
     - Sentiment: 0.67

@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- CHARGEMENT DES MODELES ---
+# --- LOAD MODELS ---
 @st.cache_resource
 def load_model(task_name):
     path = f"./models/model_{task_name}"
@@ -27,7 +27,7 @@ def load_model(task_name):
         label_mapping = json.load(f)
     return tokenizer, model, label_mapping
 
-# --- PREDICTION ---
+# --- PREDICTION FUNCTION ---
 def predict(text, tokenizer, model, label_mapping):
     inputs = tokenizer(
         text,
@@ -104,7 +104,7 @@ if analyze_btn:
     else:
         with st.spinner("Loading models and analyzing..."):
 
-            # Charger les modeles
+            # Load models
             tok_s, mod_s, lab_s = load_model("sentiment")
             tok_n, mod_n, lab_n = load_model("note")
             tok_t, mod_t, lab_t = load_model("theme")
@@ -117,7 +117,7 @@ if analyze_btn:
         st.markdown("---")
         st.subheader("Results")
 
-        # --- METRIQUES PRINCIPALES ---
+        # --- MAIN METRICS ---
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -146,7 +146,7 @@ if analyze_btn:
 
         st.markdown("---")
 
-        # --- GRAPHIQUES PROBABILITES ---
+        # --- PROBABILITY CHARTS ---
         st.subheader("Prediction Probabilities")
         col1, col2, col3 = st.columns(3)
 
@@ -182,7 +182,7 @@ if analyze_btn:
 
         st.markdown("---")
 
-        # --- EXPLICATION DU MODÈLE (SHAP) ---
+        # --- MODEL EXPLANATION (SHAP) ---
         st.subheader("Explanation")
         
         with st.spinner("Calculating word impact..."):
@@ -201,20 +201,20 @@ if analyze_btn:
                 labels = list(res_s['probabilities'].keys())
                 pred_idx = labels.index(res_s['prediction'])
                 
-                # 1. Extract words and scores
+                # Extract words and their impact scores
                 words = shap_values[0].data
                 impacts = shap_values[0].values[:, pred_idx]
                 
-                # 2. Keep the top 10 most important words (ignore empty spaces)
+                # Keep top 10 most important words
                 word_impacts = [(w, i) for w, i in zip(words, impacts) if str(w).strip()]
                 word_impacts.sort(key=lambda x: abs(x[1]), reverse=True)
                 top_10 = word_impacts[:10]
-                top_10.reverse() # For display purposes
+                top_10.reverse()
                 
                 top_words = [str(x[0]) for x in top_10]
                 top_scores = [float(x[1]) for x in top_10]
                 
-                # ADAPTED COLORS (Green = Positive, Red = Negative)
+                # Color coding based on sentiment contribution
                 if res_s['prediction'] == 'positive':
                     colors = ['#00cc66' if s > 0 else '#ff0051' for s in top_scores]
                 elif res_s['prediction'] == 'negative':
@@ -222,7 +222,7 @@ if analyze_btn:
                 else:
                     colors = ['#3498db' if s > 0 else '#e74c3c' for s in top_scores]
                 
-                # 3. PLOTLY CHART CREATION (Interactive and perfect!)
+                # Plot SHAP values
                 fig = go.Figure(go.Bar(
                     x=top_scores,
                     y=top_words,
@@ -245,8 +245,7 @@ if analyze_btn:
             except Exception as e:
                 st.warning(f"Could not generate SHAP explanation: {e}")
 
-
-        # --- Resume final ---
+        # --- FINAL SUMMARY ---
         st.info(f"""
         **Summary:** This review is **{res_s['prediction']}** 
         with a predicted rating of **{res_n['prediction']} stars** 
