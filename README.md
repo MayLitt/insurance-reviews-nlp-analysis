@@ -241,11 +241,19 @@ The notebook `exploration.ipynb` contains:
 ## ⚠️ Important Notes
 
 * The app requires:
-
   * pretrained models in `/models`
   * embeddings file in `/data`
 * If files are missing → the app will not run correctly
 * The QA system requires an internet connection
+
+### Download required files
+
+The fine-tuned models are too large for GitHub and are available on Google Drive:
+
+👉 [Download models] DRIVE LINK :
+(https://drive.google.com/drive/folders/1ZnNIflIZsbqKgFtUKDOYniWYrAzAF6dP?usp=sharing))
+
+After downloading, place the `models/` folder at the root of the project.
 
 ---
 
