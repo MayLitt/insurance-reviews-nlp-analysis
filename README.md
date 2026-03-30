@@ -260,11 +260,11 @@ A 5-minute demo video is provided to:
 
 ## Author
 
-Engineering student specializing in Data & AI.
+Hannah-May LITTIERE
 
 ---
 
-## How to Test (Quick Guide for Professor)
+## How to Test
 
 1. Install dependencies
 2. Add Gemini API key
